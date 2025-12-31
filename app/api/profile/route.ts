@@ -1,5 +1,6 @@
 import { verifySession } from "@/lib/session"
 import { getUserData, updateUser } from "@/lib/models"
+import { validateEmail, validateName } from "@/lib/validation"
 import { type NextRequest, NextResponse } from "next/server"
 
 export async function GET() {
@@ -24,6 +25,20 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json()
+    
+    // Validate input
+    const errors: string[] = []
+    if (body.fullName !== undefined && !validateName(body.fullName)) {
+      errors.push("Full name must be at least 2 characters")
+    }
+    if (body.email !== undefined && !validateEmail(body.email)) {
+      errors.push("Please enter a valid email")
+    }
+    
+    if (errors.length > 0) {
+      return NextResponse.json({ error: "Validation failed", details: errors }, { status: 400 })
+    }
+
     const updated = await updateUser(session.userId, {
       fullName: body.fullName,
       email: body.email,
